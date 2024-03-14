@@ -8,6 +8,28 @@ from langchain.prompts import HumanMessagePromptTemplate, ChatPromptTemplate
 
 from core.prompt_bank import STATEMENTS_EXAMPLES, STATEMENT_SYSTEM, STATEMENT_USER
 from core.prompt_bank import NLI_EXAMPLES, NLI_SYSTEM, NLI_USER
+from core.prompt_bank import FACTUALITY_EXAMPLES, FACTUALITY_SYSTEM, FACTUALITY_USER
+
+def check_schema(variable, schema):
+    # Dict
+    if isinstance(schema, dict) and isinstance(variable, dict):
+        for key, value_type in schema.items():
+            if key not in variable:
+                return False
+            if not check_schema(variable[key], value_type):
+                return False
+        return True
+
+    # List
+    if isinstance(schema, list) and isinstance(variable, list):
+        element_type = schema[0]
+        for e in variable:
+            if not check_schema(e, element_type):
+                return False
+        return True
+
+    # Primitive types
+    return isinstance(variable, schema)
 
 def get_prompt_template(system_prompt, examples, human_template, output_key):
     # System instruction for the task
@@ -103,3 +125,37 @@ class Faithfulness(RAGMetric):
         statements = self._extract_statements(data)
         return self._perform_nli(data, statements)
     
+class AnswerCorrectness(RAGMetric):
+    def __init__(self, llm, embeddings) -> None:
+        super().__init__()
+        self.llm = llm
+        self.embeddings = embeddings
+
+    def _factuality(self, data):
+        factuality_prompt = get_prompt_template(FACTUALITY_SYSTEM, FACTUALITY_EXAMPLES, 
+                                                FACTUALITY_USER, "statements")
+        factuality_chain = factuality_prompt | self.llm | SimpleJsonOutputParser()
+        print(factuality_prompt)
+        factuality_statements = []
+
+        for i, row in tqdm(data.iterrows(), total=len(data), 
+                           desc="Classifying factuality statements from answer"):
+            try:
+                classified_statements = factuality_chain.invoke({
+                    "question" : row["question"],
+                    "answer" : row["answer"],
+                    "ground_truth" : row["ground_truth"]
+                })
+
+                if not check_schema(classified_statements, {"TP" : [str], "FP" : [str], "FN" : [str]}):
+                    raise Exception("Object does not satisfy schema.")
+                
+                factuality_statements.append(classified_statements)
+            except Exception as e:
+                print(f"{i}: ", e)
+                factuality_statements.append({"TP" : [], "FP" : [], "FN" : []})
+
+        return factuality_statements
+
+    def compute_score(self, data):
+        return 0.0

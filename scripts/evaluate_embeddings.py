@@ -1,15 +1,10 @@
 import argparse
 import json
 import sys
-import os
-import numpy as np
-import pandas as pd
 from pathlib import Path
 from langchain.schema import Document
 from langchain_community.vectorstores import FAISS
-from langchain_core.embeddings import Embeddings
 from langchain.vectorstores.utils import DistanceStrategy
-from typing import List
 
 # Support running without installing as a package
 wd = Path(__file__).parent.parent.resolve()
@@ -58,20 +53,24 @@ if __name__ == "__main__":
     embedding_models = [
         "text-embedding-ada-002",
         "text-embedding-3-small",
+        "text-embedding-3-large",
         "sentence-transformers/msmarco-bert-base-dot-v5",
         "BAAI/bge-large-en-v1.5",
+        "WhereIsAI/UAE-Large-V1",
+        "mixedbread-ai/mxbai-embed-large-v1",
+        "embed-english-light-v3.0",
+        "embed-english-v3.0"
     ]
     embeddings = {m : model_factory.get_embedding_model(model=m) for m in embedding_models}
     vector_stores = {m : FAISS.from_documents(documents, embeddings[m], 
                                             distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT)
                                             for m in embedding_models}
-    
+
     # Cache queries in advance (batch) for faster processing
     for model in embedding_models:
         embeddings[model].pre_cache([qa["question"] for qa in eval_qa_dataset])
-    
+
     top_k = 3
     retrievers = {m : vector_stores[m].as_retriever(search_kwargs={"k": top_k}) for m in embedding_models}
     retrieval_accuracy = {m : evaluate_retriever(retrievers[m], eval_qa_dataset) for m in embedding_models}
-    
     print(retrieval_accuracy)

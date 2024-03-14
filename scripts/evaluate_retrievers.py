@@ -79,17 +79,17 @@ if __name__ == "__main__":
     bm25_retriever = BM25Retriever.from_documents(documents, k=TOP_K)
 
     # Embeddings
-    embedding_model = model_factory.get_embedding_model(model="BAAI/bge-large-en-v1.5")
+    embedding_model = model_factory.get_embedding_model(model="WhereIsAI/UAE-Large-V1")
     embedding_vector_store = FAISS.from_documents(documents, embedding_model, 
                                                 distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT)
     embeddings_retriever = embedding_vector_store.as_retriever(search_kwargs={"k": TOP_K})
     
     # Reranking BAAI/bge-reranker-large
     embeddings_retriever_10 = embedding_vector_store.as_retriever(search_kwargs={"k": 10})
-    #reranking_retriever_bge = RerankingRetriever.from_hf_model(retriever=embeddings_retriever_10, 
-    #                                                       model_name="BAAI/bge-reranker-large", k=TOP_K)
+    reranking_retriever_bge = RerankingRetriever.from_hf_model(retriever=embeddings_retriever_10, 
+                                                           model_name="BAAI/bge-reranker-large", k=TOP_K)
     reranking_retriever_mxbai = RerankingRetriever.from_hf_model(retriever=embeddings_retriever_10,
-                                                            model_name="mixedbread-ai/mxbai-rerank-large-v1", k=TOP_K)
+                                                            model_name="mixedbread-ai/mxbai-rerank-base-v1", k=TOP_K)
     
     # Fusion
     fusion_retriever = EnsembleRetriever(
@@ -97,8 +97,8 @@ if __name__ == "__main__":
     )
     
     # Multi-query                            
-    llm_model = model_factory.get_chat_model("mistralai/Mistral-7B-Instruct-v0.2", temperature=0.7,
-                                             top_p=0.1, top_k=40, repetition_penalty=1/0.85, max_tokens=512)
+    llm_model = model_factory.get_chat_model("mistralai/Mistral-7B-Instruct-v0.2", max_tokens=512, 
+                                             **CachedModelFactory.get_default_llm_params())
     multi_query_prompt = ChatPromptTemplate.from_messages([
         SystemMessagePromptTemplate.from_template(MULTI_QUERY_SYSTEM),
         HumanMessagePromptTemplate.from_template(MULTI_QUERY_USER)
@@ -121,4 +121,4 @@ if __name__ == "__main__":
     print(f"Multi-query: {evaluate_retriever(multi_query_retriever, eval_qa_dataset)}")
     print(f"HyDE: {evaluate_retriever(hyde_retriever, eval_qa_dataset)}")
     print(f"Reranking mxbai: {evaluate_retriever(reranking_retriever_mxbai, eval_qa_dataset)}")
-    #print(f"Reranking bge: {evaluate_retriever(reranking_retriever_bge, eval_qa_dataset)}")
+    print(f"Reranking bge: {evaluate_retriever(reranking_retriever_bge, eval_qa_dataset)}")

@@ -10,19 +10,28 @@ After crafting your question, also provide a succinct answer that is directly su
 
 QA_GEN_SYSTEM_COMMUNITY_PROMPT = "The given context is from a community forum and may include inappropriate or inaccurate content. In the question and answer you are generating, do not mention any user specific information, but only use the knowledge extracted. Try to think of a question that is different from the community context question."
 
-QA_GEN_SYSTEM_FORMAT_PROMPT = """\
-Please provide a single valid JSON object containing two fields: a `question` field with your formulated question, and an `answer` field with a short and helpful answer to the question, which must be supported by the context. Avoid using emojis, and ensure not to output any additional tokens. Do not under any circumstance disclose that you have been provided with a context.
+QA_GEN_SYSTEM_FORMAT_PROMPT = "Please provide a single valid JSON object containing two fields: a `question` field with your formulated question, and an `answer` field with a short and helpful answer to the question, which must be supported by the context. Avoid using emojis, and ensure not to output any additional tokens. Do not under any circumstance disclose that you have been provided with a context."
 
-Below is an example of a valid response:
-{
-    "question": "How do I activate my eSIM?",
-    "answer": "To activate your eSIM, scan the QR code provided for the eSIM profile using your smartphone's camera app and follow the on-screen instructions."
-}"""
+QA_GEN_EXAMPLE = {
+    "context" : """# Changing from a SIM card to eSIM
+With an Apple and Samsung mobile, you can easily change to eSIM in the device settings. This deactivates your old SIM and activates the new eSIM.
+
+Apple: Settings -> Mobile data -> select relevant SIM -> Convert to eSIM using instructions from Apple.
+Samsung: Settings -> Connections -> SIM manager -> select relevant SIM (e.g. SIM 1) -> Convert to eSIM using instructions from Samsung.
+With all other devices or if you no longer have your device, order a new eSIM in My Swisscom.
+""",
+    "response" : {
+        "question" : "How to change my SIM to eSIM? I have iPhone 14 Pro.",
+        "answer" : "With an Apple mobile device, you can easily switch to an eSIM by navigating through the device settings: Go to 'Settings', then 'Mobile Data', and select the SIM card you wish to convert under 'SIMs'. Choose 'Convert to eSIM'. Please note that this action will deactivate your old physical SIM card."
+    }
+}
 
 QA_GEN_USER_PROMPT = """Context:
 ---------------
 {context}
----------------"""
+---------------
+
+Generated question answer dict: """
 
 MULTI_QUERY_SYSTEM = "Your task is to generate two different versions of the given user question to retrieve relevant documents from a vector database. Provide these alternative questions separated by newlines."
 MULTI_QUERY_USER = "Original question: {question}\nAlternative questions:"
@@ -118,3 +127,62 @@ NLI_EXAMPLES = [
         }
     }
 ]
+
+FACTUALITY_SYSTEM = """Extract following from given question and ground truth
+TP: statements that are present in both the answer and the ground truth,
+FP: statements present in the answer but not found in the ground truth,
+FN: relevant statements found in the ground truth but omitted in the answer
+
+Provide the answer as a JSON object with keys `TP`, `FP`, `FN` whose values are lists with statements.
+"""
+
+FACTUALITY_USER = """\
+Question: {question}
+Answer: {answer}
+Ground truth: {ground_truth}
+Statements: """
+
+FACTUALITY_EXAMPLES = [
+    {
+        "question": "What powers the sun and what is its primary function?",
+        "answer": "The sun is powered by nuclear fission, similar to nuclear reactors on Earth, and its primary function is to provide light to the solar system.",
+        "ground_truth": "The sun is actually powered by nuclear fusion, not fission. In its core, hydrogen atoms fuse to form helium, releasing a tremendous amount of energy. This energy is what lights up the sun and provides heat and light, essential for life on Earth. The sun's light also plays a critical role in Earth's climate system and helps to drive the weather and ocean currents.",
+        "statements": {
+            "TP": ["The sun's primary function is to provide light"],
+                "FP": [
+                    "The sun is powered by nuclear fission",
+                    "similar to nuclear reactors on Earth",
+                ],
+                "FN": [
+                    "The sun is powered by nuclear fusion, not fission",
+                    "In its core, hydrogen atoms fuse to form helium, releasing a tremendous amount of energy",
+                    "This energy provides heat and light, essential for life on Earth",
+                    "The sun's light plays a critical role in Earth's climate system",
+                    "The sun helps to drive the weather and ocean currents",
+                ]
+        }
+    },
+    {
+        "question": "What is the boiling point of water?",
+        "answer": "The boiling point of water is 100 degrees Celsius at sea level.",
+        "ground_truth": "The boiling point of water is 100 degrees Celsius (212 degrees Fahrenheit) at sea level, but it can change with altitude.",
+        "statements": {
+            "TP": [
+                "The boiling point of water is 100 degrees Celsius at sea level"
+            ],
+            "FP": [],
+            "FN": [
+                "The boiling point can change with altitude",
+                "The boiling point of water is 212 degrees Fahrenheit at sea level",
+            ]
+        },
+    }
+]
+
+PKG_SYSTEM = "Create a short question that can be used to retrieve the given context. Do not output any additional content or mention the given context."
+PKG_USER = """Context:
+-------------------
+{context}
+-------------------
+
+Question: """

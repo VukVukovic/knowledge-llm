@@ -13,6 +13,8 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from .together_chat import ChatTogether
 from google.generativeai.types.safety_types import HarmBlockThreshold, HarmCategory
 from langchain_mistralai.chat_models import ChatMistralAI
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import CohereEmbeddings
 
 safety_settings = {
     HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
@@ -21,7 +23,7 @@ safety_settings = {
     HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
 }
 
-def normalize(vector : [float]) -> [float]:
+def normalize(vector : List[float]) -> List[float]:
     return (vector / np.linalg.norm(vector)).tolist()
 
 class FullyCacheBackedEmbeddings(CacheBackedEmbeddings):
@@ -54,7 +56,7 @@ class CachedModelFactory:
                 self.embedding_store, namespace=model
             )
 
-        if model in ["sentence-transformers/msmarco-bert-base-dot-v5", "BAAI/bge-large-en-v1.5"]:
+        if model in ["sentence-transformers/msmarco-bert-base-dot-v5", "BAAI/bge-large-en-v1.5", "WhereIsAI/UAE-Large-V1"]:
             return FullyCacheBackedEmbeddings.from_bytes_store(
                 OpenAIEmbeddings(
                     model=model,
@@ -82,10 +84,27 @@ class CachedModelFactory:
                 namespace=model
             )
         
+        if model in ["mixedbread-ai/mxbai-embed-large-v1"]:
+            return FullyCacheBackedEmbeddings.from_bytes_store(
+                HuggingFaceEmbeddings(model_name=model, model_kwargs={"trust_remote_code":True}),
+                self.embedding_store,
+                namespace=model
+            )
+        
+        if model in ["embed-english-light-v3.0", "embed-english-v3.0"]:
+            return FullyCacheBackedEmbeddings.from_bytes_store(
+                CohereEmbeddings(model=model),
+                self.embedding_store,
+                namespace=model
+            )
+        
         raise Exception(f"Embedding model `{model}` is not available.")
         
     def get_chat_model(self, model, **kwargs):
         if model in ["gpt-3.5-turbo-0125", "gpt-4-0125-preview"]:
+            if "top_p" in kwargs:
+                kwargs["model_kwargs"] = {"top_p" : kwargs["top_p"]}
+                del kwargs["top_p"]
             return ChatOpenAI(model=model, **kwargs)
         
         if model in ["mistralai/Mistral-7B-Instruct-v0.2", "mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -100,3 +119,12 @@ class CachedModelFactory:
             return ChatMistralAI(model=model, **kwargs)
         
         raise Exception(f"LLM model `{model}` is not available.")
+    
+    @staticmethod
+    def get_default_llm_params():
+        return {
+            "temperature": 0.7,
+            "top_p": 0.1,
+            "top_k": 40,
+            "repetition_penalty": 1/0.85
+        }

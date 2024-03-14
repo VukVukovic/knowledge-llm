@@ -16,14 +16,14 @@ sys.path.append(str(wd))
 
 from core.langchain_models import CachedModelFactory
 from core.prompt_bank import GEN_SYSTEM, GEN_USER
-from eval.metrics import Faithfulness
+from eval.metrics import Faithfulness, AnswerCorrectness
 
 eval_qa_dataset_df = pd.read_json("data/eval_qa_dataset.json")
 swisscom_dataset_df = pd.read_json("data/swisscom_dataset.json")
 swisscom_dataset_df["id"] = swisscom_dataset_df["metadata"].apply(lambda r:r["id"])
 
 eval_data = pd.merge(eval_qa_dataset_df, swisscom_dataset_df, left_on=["relevant_id"], right_on=["id"])
-eval_data = eval_data.rename(columns={"text": "context"})
+eval_data = eval_data.rename(columns={"text": "context", "answer" : "ground_truth"})
 eval_data = eval_data.drop(columns=["relevant_id", "metadata"])
 
 model_factory = CachedModelFactory(llm_cache_file="cache/llm.db",
@@ -59,7 +59,8 @@ gen_chains = {m : gen_template | gen_models[m] | StrOutputParser() for m in gen_
 
 critique_model = model_factory.get_chat_model("gpt-3.5-turbo-0125")
 
-faithfulness = Faithfulness(llm=critique_model)
+#faithfulness = Faithfulness(llm=critique_model)
+correctness = AnswerCorrectness(llm=critique_model, embeddings=None)
 for model_name, chain in gen_chains.items():
     print(model_name)
     answers = []
@@ -68,7 +69,7 @@ for model_name, chain in gen_chains.items():
                                      "question" : e["question"]}))
     data = eval_data.copy()
     data["answer"] = answers
-    print(faithfulness.compute_score(data))
-    print()
+    correctness._factuality(data.sample(5))
+    break
     
 
