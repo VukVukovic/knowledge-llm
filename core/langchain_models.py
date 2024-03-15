@@ -9,12 +9,12 @@ from langchain.embeddings import CacheBackedEmbeddings
 from langchain_core.stores import BaseStore
 from langchain_core.embeddings import Embeddings
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain_google_genai import ChatGoogleGenerativeAI
 from .together_chat import ChatTogether
-from google.generativeai.types.safety_types import HarmBlockThreshold, HarmCategory
 from langchain_mistralai.chat_models import ChatMistralAI
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.embeddings import CohereEmbeddings
+from langchain_google_vertexai import ChatVertexAI
+from langchain_google_vertexai import HarmCategory, HarmBlockThreshold
 
 safety_settings = {
     HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
@@ -112,7 +112,7 @@ class CachedModelFactory:
             return ChatTogether(model = model, **kwargs)
         
         if model in ["gemini-pro"]:
-            return ChatGoogleGenerativeAI(model=model, convert_system_message_to_human=True,
+            return ChatVertexAI(model=model, convert_system_message_to_human=True,
                                           safety_settings=safety_settings, **kwargs)
         
         if model in ["mistral-small-latest", "mistral-medium-latest", "mistral-large-latest"]:

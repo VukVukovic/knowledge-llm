@@ -29,25 +29,15 @@ eval_data = eval_data.drop(columns=["relevant_id", "metadata"])
 model_factory = CachedModelFactory(llm_cache_file="cache/llm.db",
                                     embeddings_cache_dir="cache/embeddings")
 
-default_parameters = {
-    "temperature": 0.7,
-    "top_p": 0.1,
-    "top_k": 40,
-    "repetition_penalty": 1/0.85,
-    "max_tokens": 512
-}
-
 open_gen_models = ["mistralai/Mistral-7B-Instruct-v0.2", "mistralai/Mixtral-8x7B-Instruct-v0.1", 
-                   "zero-one-ai/Yi-34B-Chat", "Qwen/Qwen1.5-72B-Chat"]
+                   "zero-one-ai/Yi-34B-Chat", "Qwen/Qwen1.5-72B-Chat", ]
 
-gen_models = {model_name:model_factory.get_chat_model(model_name, **default_parameters)
+gen_models = {model_name:model_factory.get_chat_model(model_name, max_tokens=512, 
+                                                      **CachedModelFactory.get_default_llm_params())
               for model_name in open_gen_models}
 
 gen_models.update({
     "gpt-3.5-turbo-0125" : model_factory.get_chat_model("gpt-3.5-turbo-0125")
-})
-gen_models.update({
-    "gemini-pro" : model_factory.get_chat_model("gemini-pro")
 })
 
 gen_template = ChatPromptTemplate.from_messages([
