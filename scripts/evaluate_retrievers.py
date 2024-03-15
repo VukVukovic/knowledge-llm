@@ -86,8 +86,8 @@ if __name__ == "__main__":
     
     # Reranking BAAI/bge-reranker-large
     embeddings_retriever_10 = embedding_vector_store.as_retriever(search_kwargs={"k": 10})
-    reranking_retriever_bge = RerankingRetriever.from_hf_model(retriever=embeddings_retriever_10, 
-                                                           model_name="BAAI/bge-reranker-large", k=TOP_K)
+    #reranking_retriever_bge = RerankingRetriever.from_hf_model(retriever=embeddings_retriever_10, 
+    #                                                       model_name="BAAI/bge-reranker-large", k=TOP_K)
     #reranking_retriever_mxbai = RerankingRetriever.from_hf_model(retriever=embeddings_retriever_10,
     #                                                        model_name="mixedbread-ai/mxbai-rerank-base-v1", k=TOP_K)
     
@@ -122,5 +122,5 @@ if __name__ == "__main__":
     print(f"HyDE: {evaluate_retriever(hyde_retriever, eval_qa_dataset)}")
     #print(f"Reranking mxbai: {evaluate_retriever(reranking_retriever_mxbai, eval_qa_dataset)}")
     #Reranking mxbai: 0.7971428571428572
-    print(f"Reranking bge: {evaluate_retriever(reranking_retriever_bge, eval_qa_dataset)}")
+    #print(f"Reranking bge: {evaluate_retriever(reranking_retriever_bge, eval_qa_dataset)}")
     #Reranking bge: 0.8114285714285714

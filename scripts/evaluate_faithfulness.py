@@ -29,16 +29,13 @@ eval_data = eval_data.drop(columns=["relevant_id", "metadata"])
 model_factory = CachedModelFactory(llm_cache_file="cache/llm.db",
                                     embeddings_cache_dir="cache/embeddings")
 
-open_gen_models = ["mistralai/Mistral-7B-Instruct-v0.2", "mistralai/Mixtral-8x7B-Instruct-v0.1", 
-                   "zero-one-ai/Yi-34B-Chat", "Qwen/Qwen1.5-72B-Chat", ]
-
+default_params = CachedModelFactory.get_default_llm_params()
+full_params_models = ["mistralai/Mistral-7B-Instruct-v0.2", "mistralai/Mixtral-8x7B-Instruct-v0.1", 
+                   "zero-one-ai/Yi-34B-Chat", "Qwen/Qwen1.5-72B-Chat", "mistral-small-latest",
+                   "gemini-pro", "claude-3-haiku-20240307", "gpt-3.5-turbo-0125"]
 gen_models = {model_name:model_factory.get_chat_model(model_name, max_tokens=512, 
                                                       **CachedModelFactory.get_default_llm_params())
-              for model_name in open_gen_models}
-
-gen_models.update({
-    "gpt-3.5-turbo-0125" : model_factory.get_chat_model("gpt-3.5-turbo-0125")
-})
+              for model_name in full_params_models}
 
 gen_template = ChatPromptTemplate.from_messages([
     SystemMessage(GEN_SYSTEM),
@@ -47,10 +44,9 @@ gen_template = ChatPromptTemplate.from_messages([
 
 gen_chains = {m : gen_template | gen_models[m] | StrOutputParser() for m in gen_models}
 
-critique_model = model_factory.get_chat_model("gpt-3.5-turbo-0125")
+critique_model = model_factory.get_chat_model("gpt-3.5-turbo-0125", max_tokens=1024, **default_params)
 
-#faithfulness = Faithfulness(llm=critique_model)
-correctness = AnswerCorrectness(llm=critique_model, embeddings=None)
+faithfulness = Faithfulness(llm=critique_model)
 for model_name, chain in gen_chains.items():
     print(model_name)
     answers = []
@@ -59,7 +55,5 @@ for model_name, chain in gen_chains.items():
                                      "question" : e["question"]}))
     data = eval_data.copy()
     data["answer"] = answers
-    correctness._factuality(data.sample(5))
-    break
-    
+    print(model_name, faithfulness.compute_score(data))    
 

@@ -67,15 +67,13 @@ class Faithfulness(RAGMetric):
                     "question" : row["question"],
                     "answer" : row["answer"]
                 })
-                if type(statements_list) != list:
-                    raise Exception("Statements are not a list")
-                for s in statements_list:
-                    if type(s) != str:
-                        raise Exception("Statement list element is not a string")
+                if not check_schema(statements_list, [str]):
+                    raise Exception("Statement list is invalid")
                 statements.append(statements_list)
             except Exception as e:
-                statements_list.append([])
+                statements.append([])
                 print(f"Skipped statement extraction for {i}")
+                print(e)
         return statements
     
     def _perform_nli(self, data, statements):
@@ -85,39 +83,35 @@ class Faithfulness(RAGMetric):
         scores = []
         for s, (i, row) in tqdm(zip(statements, data.iterrows()), total=len(data), 
                            desc="Performing NLI"):
-            so = s
-            s = list(filter(lambda t:type(t)==str, s))
             if len(s) == 0:
                 print(f"No statements in {i}")
-                print(so)
+                print(row["answer"])
+                print(row["context"])
+                print("="*20)
                 scores.append(0.0)
                 continue
+
             statements_str = "\n".join(s)
             try:
                 verdicts = nli_chain.invoke({
                     "context" : row["context"],
                     "statements" : statements_str
                 })
+
                 if type(verdicts) == dict:
                     verdicts = [verdicts]
 
-                if type(verdicts) != list:
-                    raise Exception("NLI verdicts is not a list")
+                if not check_schema(verdicts, [{"statement" : str, "reason" : str, "verdict" : str}]):
+                    raise Exception("Invalid NLI list")
                 
                 correct = 0
                 for ver in verdicts:
-                    if type(ver) != dict or not "verdict" in ver:
-                        raise Exception("There is no verdict key")
                     correct += 1 if ver["verdict"].strip().lower() == "yes" else 0
-                scores.append(correct/len(s))
+                scores.append(correct/len(statements))
             except Exception as e:
                 scores.append(0.0)
                 print(f"Skipping NLI for {i}")
                 print(e)
-                print(nli_chain.invoke({
-                    "context" : row["context"],
-                    "statements" : statements_str
-                }))
         return np.mean(scores)
 
 

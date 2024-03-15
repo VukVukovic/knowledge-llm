@@ -78,7 +78,7 @@ accuracies = []
 no_match_accuracies = []
 f1s = []
 
-for threshold in np.arange(0.3, 0.5, 0.01):
+for threshold in np.arange(0.35, 0.6, 0.01):
     match_docs_filtered = [filter(lambda x:x[1]>=threshold, ds) for ds in match_docs]
     no_match_docs_filtered = [filter(lambda x:x[1]>=threshold, ds) for ds in no_match_docs]
     accuracy = get_accuracy(match_docs_filtered, eval_qa_dataset)

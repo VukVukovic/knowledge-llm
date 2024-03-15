@@ -33,6 +33,37 @@ QA_GEN_USER_PROMPT = """Context:
 
 Generated question answer dict: """
 
+RELEVANT_SYSTEM = "Given the content of a scraped document, determine whether the document is relevant for typical user queries. Assess if it includes clear and concise information about Swisscom products, services, or policies, addresses frequent customer inquiries, issues, or needs, and offers detailed descriptions, instructions, or guidelines. Respond with only 'yes' or 'no."
+RELEVANT_USER = """\
+Document:
+-------------
+{context}
+-------------
+Relevant: """
+RELEVANT_EXAMPLE_YES = """\
+# Changing from a SIM card to eSIM
+With an Apple and Samsung mobile, you can easily change to eSIM in the device settings. This deactivates your old SIM and activates the new eSIM.
+Apple: Settings -> Mobile data -> select relevant SIM -> Convert to eSIM
+Samsung: Settings -> Connections -> SIM manager -> select relevant SIM (e.g. SIM 1) -> Convert to eSIM
+With all other devices or if you no longer have your device, order a new eSIM in My Swisscom."""
+RELEVANT_EXAMPLE_NO = """\
+Ingrid Dohme
+* Our authors
+* Our authors
+
+# Ingrid Dohme
+## Former Senior HR Communication Manager
+Swisscom AG
+__LinkedIn
+__Twitter
+## More articles by Ingrid
+Personal Development
+Every end is a new beginning
+
+Himani Mishra
+##Personal Development
+Is Coding the New English?"""
+
 MULTI_QUERY_SYSTEM = "Your task is to generate two different versions of the given user question to retrieve relevant documents from a vector database. Provide these alternative questions separated by newlines."
 MULTI_QUERY_USER = "Original question: {question}\nAlternative questions:"
 

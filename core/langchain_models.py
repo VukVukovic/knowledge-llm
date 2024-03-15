@@ -102,10 +102,16 @@ class CachedModelFactory:
         raise Exception(f"Embedding model `{model}` is not available.")
         
     def get_chat_model(self, model, **kwargs):
+
+        def clean_unsupported(args, unsupported):
+            args = args.copy()
+            for u in unsupported:
+                if u in args:
+                    del args[u]
+            return args
+        
         if model in ["gpt-3.5-turbo-0125", "gpt-4-0125-preview"]:
-            if "top_p" in kwargs:
-                kwargs["model_kwargs"] = {"top_p" : kwargs["top_p"]}
-                del kwargs["top_p"]
+            kwargs = clean_unsupported(kwargs, ["repetition_penalty", "top_k"])
             return ChatOpenAI(model=model, **kwargs)
         
         if model in ["mistralai/Mistral-7B-Instruct-v0.2", "mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -113,13 +119,15 @@ class CachedModelFactory:
             return ChatTogether(model = model, **kwargs)
         
         if model in ["gemini-pro"]:
-            return ChatVertexAI(model=model, convert_system_message_to_human=True,
+            kwargs = clean_unsupported(kwargs, ["repetition_penalty"])
+            return ChatVertexAI(model_name=model, convert_system_message_to_human=True,
                                           safety_settings=safety_settings, **kwargs)
         
         if model in ["mistral-small-latest", "mistral-medium-latest", "mistral-large-latest"]:
             return ChatMistralAI(model=model, **kwargs)
         
-        if model in ["claude-3-opus-20240229", "claude-3-opus-20240229", "claude-3-haiku-20240307"]:
+        if model in ["claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"]:
+            kwargs = clean_unsupported(kwargs, ["repetition_penalty"])
             return ChatAnthropic(model_name=model, **kwargs)
         
         raise Exception(f"LLM model `{model}` is not available.")
