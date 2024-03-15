@@ -15,6 +15,7 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.embeddings import CohereEmbeddings
 from langchain_google_vertexai import ChatVertexAI
 from langchain_google_vertexai import HarmCategory, HarmBlockThreshold
+from langchain_anthropic import ChatAnthropic
 
 safety_settings = {
     HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
@@ -117,6 +118,9 @@ class CachedModelFactory:
         
         if model in ["mistral-small-latest", "mistral-medium-latest", "mistral-large-latest"]:
             return ChatMistralAI(model=model, **kwargs)
+        
+        if model in ["claude-3-opus-20240229", "claude-3-opus-20240229", "claude-3-haiku-20240307"]:
+            return ChatAnthropic(model_name=model, **kwargs)
         
         raise Exception(f"LLM model `{model}` is not available.")
     
