@@ -86,8 +86,6 @@ class Faithfulness(RAGMetric):
             if len(s) == 0:
                 print(f"No statements in {i}")
                 print(row["answer"])
-                print(row["context"])
-                print("="*20)
                 scores.append(0.0)
                 continue
 
@@ -107,11 +105,11 @@ class Faithfulness(RAGMetric):
                 correct = 0
                 for ver in verdicts:
                     correct += 1 if ver["verdict"].strip().lower() == "yes" else 0
-                scores.append(correct/len(statements))
+                scores.append(correct/len(verdicts))
             except Exception as e:
                 scores.append(0.0)
-                print(f"Skipping NLI for {i}")
-                print(e)
+                #print(f"Skipping NLI for {i}")
+                #print(e)
         return np.mean(scores)
 
 
@@ -129,10 +127,9 @@ class AnswerCorrectness(RAGMetric):
         factuality_prompt = get_prompt_template(FACTUALITY_SYSTEM, FACTUALITY_EXAMPLES, 
                                                 FACTUALITY_USER, "statements")
         factuality_chain = factuality_prompt | self.llm | SimpleJsonOutputParser()
-        print(factuality_prompt)
-        factuality_statements = []
 
-        for i, row in tqdm(data.iterrows(), total=len(data), 
+        f1s = []
+        for _, row in tqdm(data.iterrows(), total=len(data), 
                            desc="Classifying factuality statements from answer"):
             try:
                 classified_statements = factuality_chain.invoke({
@@ -142,14 +139,22 @@ class AnswerCorrectness(RAGMetric):
                 })
 
                 if not check_schema(classified_statements, {"TP" : [str], "FP" : [str], "FN" : [str]}):
-                    raise Exception("Object does not satisfy schema.")
+                    raise Exception("Object does not satisfy TP/FP/FN schema.")
                 
-                factuality_statements.append(classified_statements)
+                tp = len(classified_statements["TP"])
+                fp = len(classified_statements["FP"])
+                fn = len(classified_statements["FN"])
+                f1 = tp / (tp + 0.5 * (fp + fn)) if tp > 0 else 0
+                f1s.append(f1)
             except Exception as e:
-                print(f"{i}: ", e)
-                factuality_statements.append({"TP" : [], "FP" : [], "FN" : []})
+                f1s.append(0.0)
 
-        return factuality_statements
+        return np.mean(f1s)
+    
+    def _semantic_similarity(self, data):
+        answer_embeddings = self.embeddings.embed_documents(list(data["answer"]))
+        ground_truth_embeddings = self.embeddings.embed_documents(list(data["ground_truth"]))
+        return np.mean([np.dot(e, g) for e, g in zip(answer_embeddings, ground_truth_embeddings)])
 
     def compute_score(self, data):
-        return 0.0
+        return self._factuality(data)

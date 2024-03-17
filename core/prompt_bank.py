@@ -70,7 +70,7 @@ MULTI_QUERY_USER = "Original question: {question}\nAlternative questions:"
 HYDE_SYSTEM = "Write a Swisscom webpage passage to answer the question."
 HYDE_USER = "Question: {question}\nPassage:"
 
-GEN_SYSTEM = "Your role is to provide clear, brief answers about Swisscom's products and services, using only the provided context. If a question is beyond the scope, lacks context, or is unrelated to Swisscom, clearly state that you cannot assist."
+GEN_SYSTEM = "Your role is to provide clear, brief answers about Swisscom's products and services, using only the provided context, directly to the user. If a question is beyond the scope, lacks context, or is unrelated to Swisscom, clearly state that you cannot assist. Do not mention the given the context."
 GEN_USER = """Context:
 -------------------
 {context}
@@ -159,11 +159,12 @@ NLI_EXAMPLES = [
     }
 ]
 
-FACTUALITY_SYSTEM = """Extract following from given question and ground truth
+FACTUALITY_SYSTEM = """Extract following from answer and ground truth:
 TP: statements that are present in both the answer and the ground truth,
 FP: statements present in the answer but not found in the ground truth,
 FN: relevant statements found in the ground truth but omitted in the answer
 
+Additionally, you are provided original question for a better context.
 Provide the answer as a JSON object with keys `TP`, `FP`, `FN` whose values are lists with statements.
 """
 
@@ -180,17 +181,17 @@ FACTUALITY_EXAMPLES = [
         "ground_truth": "The sun is actually powered by nuclear fusion, not fission. In its core, hydrogen atoms fuse to form helium, releasing a tremendous amount of energy. This energy is what lights up the sun and provides heat and light, essential for life on Earth. The sun's light also plays a critical role in Earth's climate system and helps to drive the weather and ocean currents.",
         "statements": {
             "TP": ["The sun's primary function is to provide light"],
-                "FP": [
+            "FP": [
                     "The sun is powered by nuclear fission",
                     "similar to nuclear reactors on Earth",
-                ],
-                "FN": [
-                    "The sun is powered by nuclear fusion, not fission",
-                    "In its core, hydrogen atoms fuse to form helium, releasing a tremendous amount of energy",
-                    "This energy provides heat and light, essential for life on Earth",
-                    "The sun's light plays a critical role in Earth's climate system",
-                    "The sun helps to drive the weather and ocean currents",
-                ]
+            ],
+            "FN": [
+                "The sun is powered by nuclear fusion, not fission",
+                "In its core, hydrogen atoms fuse to form helium, releasing a tremendous amount of energy",
+                "This energy provides heat and light, essential for life on Earth",
+                "The sun's light plays a critical role in Earth's climate system",
+                "The sun helps to drive the weather and ocean currents",
+            ]
         }
     },
     {

@@ -30,9 +30,10 @@ model_factory = CachedModelFactory(llm_cache_file="cache/llm.db",
                                     embeddings_cache_dir="cache/embeddings")
 
 default_params = CachedModelFactory.get_default_llm_params()
-full_params_models = ["mistralai/Mistral-7B-Instruct-v0.2", "mistralai/Mixtral-8x7B-Instruct-v0.1", 
+full_params_models = ["gemini-pro", "mistralai/Mistral-7B-Instruct-v0.2", "mistralai/Mixtral-8x7B-Instruct-v0.1", 
                    "zero-one-ai/Yi-34B-Chat", "Qwen/Qwen1.5-72B-Chat", "mistral-small-latest",
-                   "gemini-pro", "claude-3-haiku-20240307", "gpt-3.5-turbo-0125"]
+                   "claude-3-haiku-20240307", "gpt-3.5-turbo-0125", 
+                   "mistral-medium-latest", "claude-3-sonnet-20240229"]
 gen_models = {model_name:model_factory.get_chat_model(model_name, max_tokens=512, 
                                                       **CachedModelFactory.get_default_llm_params())
               for model_name in full_params_models}

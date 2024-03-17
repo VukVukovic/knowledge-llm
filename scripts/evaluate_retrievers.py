@@ -120,7 +120,11 @@ if __name__ == "__main__":
     print(f"Fusion: {evaluate_retriever(fusion_retriever, eval_qa_dataset)}")
     print(f"Multi-query: {evaluate_retriever(multi_query_retriever, eval_qa_dataset)}")
     print(f"HyDE: {evaluate_retriever(hyde_retriever, eval_qa_dataset)}")
+
     #print(f"Reranking mxbai: {evaluate_retriever(reranking_retriever_mxbai, eval_qa_dataset)}")
-    #Reranking mxbai: 0.7971428571428572
+    #Reranking mxbai: 0.7742857142857142 (mxbai emb)
+    #Reranking mxbai: 0.8028571428571428 (text-embedding-large)
+
     #print(f"Reranking bge: {evaluate_retriever(reranking_retriever_bge, eval_qa_dataset)}")
-    #Reranking bge: 0.8114285714285714
+    #Reranking bge: 0.8285714285714286 (mxbai emb)
+    #Reranking bge: 0.8314285714285714 (text-embedding-large)
