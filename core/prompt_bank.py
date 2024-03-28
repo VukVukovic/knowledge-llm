@@ -218,3 +218,8 @@ PKG_USER = """Context:
 -------------------
 
 Question: """
+
+NO_RAG_SYSTEM = "Your role is to provide clear, brief answers about Swisscom's products and services, using only the provided context, directly to the user. Answer to the best of your knowledge."
+NO_RAG_USER = """User question: {question}
+
+Answer: """

@@ -27,6 +27,10 @@ def check_schema(variable, schema):
             if not check_schema(e, element_type):
                 return False
         return True
+    
+    # None
+    if variable is None:
+        return False
 
     # Primitive types
     return isinstance(variable, schema)
@@ -118,10 +122,11 @@ class Faithfulness(RAGMetric):
         return self._perform_nli(data, statements)
     
 class AnswerCorrectness(RAGMetric):
-    def __init__(self, llm, embeddings) -> None:
+    def __init__(self, llm, embeddings, alpha) -> None:
         super().__init__()
         self.llm = llm
         self.embeddings = embeddings
+        self.alpha = alpha
 
     def _factuality(self, data):
         factuality_prompt = get_prompt_template(FACTUALITY_SYSTEM, FACTUALITY_EXAMPLES, 
@@ -147,7 +152,13 @@ class AnswerCorrectness(RAGMetric):
                 f1 = tp / (tp + 0.5 * (fp + fn)) if tp > 0 else 0
                 f1s.append(f1)
             except Exception as e:
-                f1s.append(0.0)
+                if "so there are no false positives or false negatives" in str(e) or \
+                    "matches exactly" in str(e) or \
+                    "covers all relevant information from the ground truth" in str(e):
+                    f1s.append(1.0)
+                else:
+                    f1s.append(0.0)
+                    print(e)
 
         return np.mean(f1s)
     
@@ -157,4 +168,4 @@ class AnswerCorrectness(RAGMetric):
         return np.mean([np.dot(e, g) for e, g in zip(answer_embeddings, ground_truth_embeddings)])
 
     def compute_score(self, data):
-        return self._factuality(data)
+        return self.alpha * self._factuality(data) + (1-self.alpha) * self._semantic_similarity(data)

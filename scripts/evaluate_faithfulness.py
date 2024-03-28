@@ -30,7 +30,7 @@ model_factory = CachedModelFactory(llm_cache_file="cache/llm.db",
                                     embeddings_cache_dir="cache/embeddings")
 
 default_params = CachedModelFactory.get_default_llm_params()
-full_params_models = ["gemini-pro", "mistralai/Mistral-7B-Instruct-v0.2", "mistralai/Mixtral-8x7B-Instruct-v0.1", 
+full_params_models = ["gpt-4-0125-preview", "gemini-pro", "mistralai/Mistral-7B-Instruct-v0.2", "mistralai/Mixtral-8x7B-Instruct-v0.1", 
                    "zero-one-ai/Yi-34B-Chat", "Qwen/Qwen1.5-72B-Chat", "mistral-small-latest",
                    "claude-3-haiku-20240307", "gpt-3.5-turbo-0125", 
                    "mistral-medium-latest", "claude-3-sonnet-20240229"]
@@ -45,8 +45,10 @@ gen_template = ChatPromptTemplate.from_messages([
 
 gen_chains = {m : gen_template | gen_models[m] | StrOutputParser() for m in gen_models}
 
-critique_model = model_factory.get_chat_model("gpt-3.5-turbo-0125", max_tokens=1024, **default_params)
+#critique_model = model_factory.get_chat_model("gpt-3.5-turbo-0125", max_tokens=1024, **default_params)
+critique_model = model_factory.get_chat_model("Qwen/Qwen1.5-72B-Chat", max_tokens=1024, **default_params)
 
+results = {}
 faithfulness = Faithfulness(llm=critique_model)
 for model_name, chain in gen_chains.items():
     print(model_name)
@@ -56,5 +58,8 @@ for model_name, chain in gen_chains.items():
                                      "question" : e["question"]}))
     data = eval_data.copy()
     data["answer"] = answers
-    print(model_name, faithfulness.compute_score(data))    
+    faithfulness_score = faithfulness.compute_score(data)
+    results[model_name] = faithfulness_score
+    print(model_name, faithfulness.compute_score(data))  
 
+print(results)

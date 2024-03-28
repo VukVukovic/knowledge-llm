@@ -73,4 +73,5 @@ if __name__ == "__main__":
     top_k = 3
     retrievers = {m : vector_stores[m].as_retriever(search_kwargs={"k": top_k}) for m in embedding_models}
     retrieval_accuracy = {m : evaluate_retriever(retrievers[m], eval_qa_dataset) for m in embedding_models}
-    print(retrieval_accuracy)
+    print(list(retrieval_accuracy.keys()))
+    print("\n".join([f"{v:.3f}" for v in list(retrieval_accuracy.values())]))

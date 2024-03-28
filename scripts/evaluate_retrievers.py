@@ -8,7 +8,6 @@ from tqdm import tqdm
 from langchain.chains import LLMChain
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain.chains import LLMChain
 from langchain.retrievers import EnsembleRetriever
 from langchain_community.retrievers import BM25Retriever
 from langchain_community.vectorstores import FAISS
@@ -73,13 +72,13 @@ if __name__ == "__main__":
         eval_qa_dataset = json.load(f)
     documents = get_langchain_documents(swisscom_dataset)
 
-    TOP_K = 3
+    TOP_K = 9
 
     # BM25
     bm25_retriever = BM25Retriever.from_documents(documents, k=TOP_K)
 
     # Embeddings
-    embedding_model = model_factory.get_embedding_model(model="mixedbread-ai/mxbai-embed-large-v1")
+    embedding_model = model_factory.get_embedding_model(model="WhereIsAI/UAE-Large-V1")
     embedding_vector_store = FAISS.from_documents(documents, embedding_model, 
                                                 distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT)
     embeddings_retriever = embedding_vector_store.as_retriever(search_kwargs={"k": TOP_K})
@@ -115,11 +114,11 @@ if __name__ == "__main__":
     hyde_chain = hyde_prompt | llm_model | StrOutputParser()
     hyde_retriever = HydeRetriever.from_hyde_chain(retriever=embeddings_retriever, hyde_chain=hyde_chain)
 
-    print(f"BM25: {evaluate_retriever(bm25_retriever, eval_qa_dataset)}")
-    print(f"Embeddings: {evaluate_retriever(embeddings_retriever, eval_qa_dataset)}")
-    print(f"Fusion: {evaluate_retriever(fusion_retriever, eval_qa_dataset)}")
-    print(f"Multi-query: {evaluate_retriever(multi_query_retriever, eval_qa_dataset)}")
-    print(f"HyDE: {evaluate_retriever(hyde_retriever, eval_qa_dataset)}")
+    print(f"BM25: {evaluate_retriever(bm25_retriever, eval_qa_dataset):.3f}")
+    print(f"Embeddings: {evaluate_retriever(embeddings_retriever, eval_qa_dataset):.3f}")
+    print(f"Fusion: {evaluate_retriever(fusion_retriever, eval_qa_dataset):.3f}")
+    print(f"Multi-query: {evaluate_retriever(multi_query_retriever, eval_qa_dataset):.3f}")
+    print(f"HyDE: {evaluate_retriever(hyde_retriever, eval_qa_dataset):.3f}")
 
     #print(f"Reranking mxbai: {evaluate_retriever(reranking_retriever_mxbai, eval_qa_dataset)}")
     #Reranking mxbai: 0.7742857142857142 (mxbai emb)
